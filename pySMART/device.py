@@ -29,7 +29,7 @@ from __future__ import print_function
 import os
 import logging
 import re  # Don't delete this 'un-used' import
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, DEVNULL
 from time import time, strptime, mktime, sleep
 import warnings
 
@@ -53,8 +53,9 @@ def smart_health_assement(disk_name):
         [SMARTCTL_PATH, '--health', os.path.join('/dev/', disk_name.replace('nvd','nvme'))],
         stdout=PIPE,
         stderr=PIPE,
+        universal_newlines=True
     )
-    _stdout, _stderr = [i.decode('utf8') for i in cmd.communicate()]
+    _stdout, _stderr = cmd.communicate()
     _stdout = _stdout.split('\n')
     line = _stdout[4]  # We only need this line
     if 'SMART overall-health self-assessment' in line:  # ATA devices
@@ -216,9 +217,10 @@ class Device(object):
             cmd = Popen(
                 [SMARTCTL_PATH, '-d', 'test', os.path.join('/dev/', self.name)],
                 stdout=PIPE,
-                stderr=PIPE
+                stderr=PIPE,
+                universal_newlines=True
             )
-            _stdout, _stderr = [i.decode('utf8') for i in cmd.communicate()]
+            _stdout, _stderr = cmd.communicate()
             if _stdout != '':
                 # I do not like this parsing logic but it works for now!
                 # just for reference _stdout.split('\n') gets us
@@ -322,8 +324,9 @@ class Device(object):
                 action_lower,
                 os.path.join('/dev/', self.name)
             ],
-            stdout=PIPE, stderr=PIPE)
-        _stdout, _stderr = [i.decode('utf8') for i in cmd.communicate()]
+            stdout=PIPE, stderr=PIPE,
+            universal_newlines=True)
+        _stdout, _stderr = cmd.communicate()
         if cmd.returncode != 0:
             return (False, _stdout + _stderr)
         # if everything worked out so far lets perform an update() and check the result
@@ -406,9 +409,10 @@ class Device(object):
                     os.path.join('/dev/', self.name)
                 ],
                 stdout=PIPE,
-                stderr=PIPE
+                stderr=PIPE,
+                universal_newlines=True
             )
-            _stdout, _stderr = [i.decode('utf8') for i in cmd.communicate()]
+            _stdout, _stderr = cmd.communicate()
             if 'GP Log 0x11' in _stdout.split('\n')[3]:
                 self.interface = test
         # If device type is still SCSI (not changed to SAT above), then
@@ -424,9 +428,10 @@ class Device(object):
                     os.path.join('/dev/', self.name)
                 ],
                 stdout=PIPE,
-                stderr=PIPE
+                stderr=PIPE,
+                universal_newlines=True
             )
-            _stdout, _stderr = [i.decode('utf8') for i in cmd.communicate()]
+            _stdout, _stderr = cmd.communicate()
             if 'SAS SSP' in _stdout.split('\n')[4]:
                 self.interface = 'sas'
             # Some older SAS devices do not support the SAS PHY log command.
@@ -441,9 +446,10 @@ class Device(object):
                         os.path.join('/dev/', self.name)
                     ],
                     stdout=PIPE,
-                    stderr=PIPE
+                    stderr=PIPE,
+                    universal_newlines=True
                 )
-                _stdout, _stderr = [i.decode('utf8', 'ignore') for i in cmd.communicate()]
+                _stdout, _stderr = cmd.communicate()
                 for line in _stdout.split('\n'):
                     if 'Transport protocol' in line and 'SAS' in line:
                         self.interface = 'sas'
@@ -573,8 +579,8 @@ class Device(object):
                 '-X',
                 os.path.join("/dev/", self.name),
             ],
-            stdout=PIPE,
-            stderr=PIPE
+            stdout=DEVNULL,
+            stderr=DEVNULL
         )
         cmd.wait()
         return cmd.returncode
@@ -649,9 +655,10 @@ class Device(object):
                 os.path.join('/dev/', self.name)
             ],
             stdout=PIPE,
-            stderr=PIPE
+            stderr=PIPE,
+            universal_newlines=True
         )
-        _stdout, _stderr = [i.decode('utf8') for i in cmd.communicate()]
+        _stdout, _stderr = cmd.communicate()
         _success = False
         _running = False
         for line in _stdout.split('\n'):
@@ -792,8 +799,10 @@ class Device(object):
             ]
         popen_list = list(filter(None, popen_list))
         logger.trace("Executing the following cmd: {0}".format(popen_list))
-        cmd = Popen(popen_list, stdout=PIPE, stderr=PIPE)
-        _stdout, _stderr = [i.decode('utf8', 'ignore') for i in cmd.communicate()]
+        cmd = Popen(popen_list,
+                    stdout=PIPE, stderr=PIPE,
+                    universal_newlines=True)
+        _stdout, _stderr = cmd.communicate()
         parse_self_tests = False
         parse_running_test = False
         parse_ascq = False
@@ -1064,9 +1073,10 @@ class Device(object):
                             os.path.join('/dev/', self.name)
                         ],
                         stdout=PIPE,
-                        stderr=PIPE
+                        stderr=PIPE,
+                        universal_newlines=True
                     )
-                    _stdout, _stderr = [i.decode('utf8') for i in cmd.communicate()]
+                    _stdout, _stderr = cmd.communicate()
                     for line in _stdout.split('\n'):
                         if 'power on time' in line:
                             self.diags['Power_On_Hours'] = line.split(':')[1].split(' ')[1]

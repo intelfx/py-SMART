@@ -92,8 +92,10 @@ class DeviceList(object):
         Scans system busses for attached devices and add them to the
         `DeviceList` as `Device` objects.
         """
-        cmd = Popen([SMARTCTL_PATH, '--scan-open'], stdout=PIPE, stderr=PIPE)
-        _stdout, _stderr = [i.decode('utf8') for i in cmd.communicate()]
+        cmd = Popen([SMARTCTL_PATH, '--scan-open'],
+                    stdout=PIPE, stderr=PIPE,
+                    universal_newlines=True)
+        _stdout, _stderr = cmd.communicate()
         for line in _stdout.split('\n'):
             if not ('failed:' in line or line == ''):
                 name = line.split(' ')[0].replace('/dev/', '')
